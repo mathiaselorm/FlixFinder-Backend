@@ -1,3 +1,75 @@
+import csv
+import os
+from django.core.management.base import BaseCommand
+from django.db import transaction
+from django.db.utils import IntegrityError
+from django.contrib.auth import get_user_model
+from movies.models import Movie  
+from ratings.models import Rating  
+from datetime import datetime
+from faker import Faker
+from django.conf import settings
+
+User = get_user_model()
+
+fake = Faker()
+
+class Command(BaseCommand):
+    help = 'Import ratings from a CSV file, creating fake users and validating movie IDs'
+
+    def handle(self, *args, **options):
+        # Construct the path to the CSV file
+        file_path = os.path.join(settings.BASE_DIR, 'data', 'ratings.csv')
+
+        with open(file_path, newline='', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                with transaction.atomic():
+                    user_id = int(row['userId'])
+                    movie_id = int(row['movieId'])
+                    score = float(row['rating'])
+                    timestamp = datetime.fromtimestamp(float(row['timestamp']))
+
+                    user = self.get_or_create_user(user_id)
+                    if user is None:
+                        self.stdout.write(self.style.ERROR('Maximum retry limit reached for user creation. Skipping row.'))
+                        continue
+
+                    try:
+                        movie = Movie.objects.get(id=movie_id)
+                        rating, created = Rating.objects.update_or_create(
+                            user=user,
+                            movie=movie,
+                            defaults={'score': score, 'created_at': timestamp, 'updated_at': timestamp}
+                        )
+                        action = "added" if created else "updated"
+                        self.stdout.write(self.style.SUCCESS(f'Rating for {movie.title} by {user.email} {action}.'))
+                    except Movie.DoesNotExist:
+                        self.stdout.write(self.style.WARNING(f'Skipped rating for movie ID {movie_id} as it does not exist.'))
+
+    def get_or_create_user(self, user_id, retry=0):
+        if retry > 3:  # Set a max retry limit to prevent infinite recursion
+            return None
+        try:
+            email = fake.unique.email()
+            return User.objects.get_or_create(
+                id=user_id,
+                defaults={
+                    'email': email,
+                    'first_name': fake.first_name(),
+                    'last_name': fake.last_name(),
+                    'password': User.objects.make_random_password()
+                }
+            )[0]
+        except IntegrityError:
+            fake.unique.clear()
+            return self.get_or_create_user(user_id, retry=retry + 1)
+
+
+
+
+
+"""
 from django.core.management.base import BaseCommand
 import pandas as pd
 from django.contrib.auth import get_user_model
@@ -51,3 +123,4 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f'Successfully populated {successful_creates} ratings data'))
         if failed_creates:
             self.stdout.write(self.style.ERROR(f'Failed to create {failed_creates} ratings entries'))
+"""

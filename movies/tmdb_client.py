@@ -2,11 +2,7 @@ import requests
 import logging
 from django.conf import settings
 
-
-
 logger = logging.getLogger(__name__)
-
-
 
 class TMDbClient:
     def __init__(self, api_key):
@@ -34,11 +30,12 @@ class TMDbClient:
         params = {'api_key': self.api_key, 'language': 'en-US', 'page': page}
         return self.make_request(url, params)
 
-    def get_movie_details_by_tmdb_id(self, tmdb_id):
-        """Fetch movie details from TMDb using TMDB ID."""
-        url = f"{self.base_url}/movie/{tmdb_id}"
+    def get_movie_by_imdb_id(self, imdb_id):
+        """Fetch TMDB movie ID using IMDb ID."""
+        url = f"{self.base_url}/find/{imdb_id}"
         params = {
             'api_key': self.api_key,
+            'external_source': 'imdb_id',
             'language': 'en-US'
         }
         return self.make_request(url, params)
@@ -48,32 +45,13 @@ class TMDbClient:
         url = f"{self.base_url}/movie/{movie_id}/videos"
         params = {'api_key': self.api_key, 'language': 'en-US'}
         return self.make_request(url, params)
-    
 
-    
     def get_movie_cast(self, movie_id):
         """Fetch cast details for a specific movie from TMDb."""
-        url = f"{self.BASE_URL}/movie/{movie_id}/credits"
+        url = f"{self.base_url}/movie/{movie_id}/credits"
         params = {'api_key': self.api_key, 'language': 'en-US'}
-        response = self.make_request(url, params)
-        if response and 'cast' in response:
-            return [cast_member['name'] for cast_member in response['cast']] if response.get('cast') else []
-        return []
+        return self.make_request(url, params)
 
-    
-    def get_movie_by_imdb_id(self, imdb_id):
-        """Fetch TMDB movie ID using IMDb ID."""
-        url = f"{self.BASE_URL}/find/{imdb_id}"
-        params = {
-            'api_key': self.api_key,
-            'external_source': 'imdb_id',
-            'language': 'en-US'
-        }
-        response = self.make_request(url, params)
-        if response and 'movie_results' in response and response['movie_results']:
-            return response['movie_results'][0]  # Return the first movie result found
-        return None
-    
     def get_movie_images_by_tmdb_id(self, tmdb_id):
         """
         Fetches images for a movie by TMDB ID.
@@ -85,18 +63,3 @@ class TMDbClient:
             return response.json()
         else:
             return None
-    
-    """
-    def find_movie_by_imdb_id(self, imdb_id):
-       Fetch TMDB movie ID using IMDb ID.
-        url = f"{self.BASE_URL}/find/{imdb_id}"
-        params = {
-            'api_key': self.api_key,
-            'external_source': 'imdb_id',
-            'language': 'en-US'
-        }
-        response = self.make_request(url, params)
-        if response and 'movie_results' in response and response['movie_results']:
-            return response['movie_results'][0]  # Return the first movie result found
-        return None
-    """   

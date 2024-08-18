@@ -1,3 +1,4 @@
 ECHO is on.
 .env
-v_env/
+.venv/
+django_errors.log

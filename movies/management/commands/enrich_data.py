@@ -6,67 +6,66 @@ from django.conf import settings
 from django.core.paginator import Paginator
 
 class Command(BaseCommand):
-    help = 'Updates the average ratings of movies in the database from TMDB'
+    help = 'Updates language, poster URL, and trailer URL of movies in the database from TMDB using IMDb ID'
 
     def handle(self, *args, **options):
         client = TMDbClient(settings.TMDB_API_KEY)
-        paginator = Paginator(Movie.objects.all(), 100)  # Processing 100 movies at a time
+        paginator = Paginator(Movie.objects.exclude(imdb_id='').order_by('id'), 100)  # Processing 100 movies at a time
         updated_count = 0
         error_count = 0
 
         for page in range(1, paginator.num_pages + 1):
             for movie in paginator.page(page).object_list:
-                if not movie.tmdb_id:
-                    continue  # Skip movies without a TMDB ID
-                self.stdout.write(f"Processing {movie.title} ({movie.tmdb_id})...")
+                self.stdout.write(f"Processing {movie.title} (IMDB ID: {movie.imdb_id})...")
                 with transaction.atomic():
-                    updated, error = self.update_movie_banner(movie, client)
+                    updated, error = self.update_movie_details(movie, client)
                     updated_count += updated
                     error_count += error
 
-        self.stdout.write(self.style.SUCCESS(f'Successfully updated banner URLs for {updated_count} movies.'))
+        self.stdout.write(self.style.SUCCESS(f'Successfully updated details for {updated_count} movies.'))
         if error_count:
-            self.stdout.write(self.style.ERROR(f'Failed to update banner URLs for {error_count} movies.'))
+            self.stdout.write(self.style.ERROR(f'Failed to update details for {error_count} movies.'))
 
-    def update_movie_banner(self, movie, client):
+    def update_movie_details(self, movie, client):
         try:
-            images = client.get_movie_images_by_tmdb_id(movie.tmdb_id)
-            if images and 'backdrops' in images and images['backdrops']:
-                # Choose the first backdrop as the banner
-                banner_path = images['backdrops'][0]['file_path']
-                movie.banner_url = f'https://image.tmdb.org/t/p/w780{banner_path}'
-                movie.save(update_fields=['banner_url'])
-                self.stdout.write(self.style.SUCCESS(f'Updated banner URL for {movie.title}: {movie.banner_url}'))
-                return 1, 0  # 1 updated, 0 errors
+            details = client.get_movie_by_imdb_id(movie.imdb_id)  # Fetch using IMDb ID
+            if details and details.get('movie_results'):
+                movie_result = details['movie_results'][0] if details['movie_results'] else None
+                if movie_result:
+                    updates = []
+                    if movie_result.get('original_language') and not movie.language:
+                        movie.language = movie_result['original_language']
+                        updates.append('language')
+
+                    if movie_result.get('poster_path') and not movie.poster_url:
+                        movie.poster_url = f'https://image.tmdb.org/t/p/w500{movie_result["poster_path"]}'
+                        updates.append('poster_url')
+
+                    trailer_url = self.extract_trailer_url(movie_result['id'], client)
+                    if trailer_url and not movie.trailer_url:
+                        movie.trailer_url = trailer_url
+                        updates.append('trailer_url')
+
+                    if updates:
+                        movie.save(update_fields=updates)
+                        self.stdout.write(self.style.SUCCESS(f'Updated {", ".join(updates)} for {movie.title}'))
+                        return 1, 0  # 1 updated, 0 errors
+            else:
+                self.stdout.write("No relevant movie data returned from TMDB for IMDb ID.")
+            return 0, 0  # No updates made
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'Error updating banner URL for {movie.title}: {str(e)}'))
-        return 0, 1  # 0 updated, 1 error
+            self.stdout.write(self.style.ERROR(f'Error updating details for {movie.title}: {str(e)}'))
+            return 0, 1  # 0 updated, 1 error
+
+    def extract_trailer_url(self, tmdb_id, client):
+        videos = client.get_movie_videos(tmdb_id)
+        if videos and 'results' in videos:
+            for video in videos['results']:
+                if video['type'] == 'Trailer' and video['site'] == 'YouTube':
+                    return f'https://www.youtube.com/watch?v={video["key"]}'
+        return None
 
 
-"""
-        for page in range(1, paginator.num_pages + 1):
-            for movie in paginator.page(page).object_list:
-                if not movie.tmdb_id:
-                    continue  # Skip movies without a TMDB ID
-                self.stdout.write(f"Processing {movie.title} ({movie.tmdb_id})...")
-                with transaction.atomic():
-                    updated, error = self.update_movie_rating(movie, client)
-                    updated_count += updated
-                    error_count += error
 
-        self.stdout.write(self.style.SUCCESS(f'Successfully updated ratings for {updated_count} movies.'))
-        if error_count:
-            self.stdout.write(self.style.ERROR(f'Failed to update ratings for {error_count} movies.'))
 
-    def update_movie_rating(self, movie, client):
-        try:
-            details = client.get_movie_details_by_tmdb_id(movie.tmdb_id)
-            if details and 'vote_average' in details:
-                movie.average_rating = details['vote_average']
-                movie.save(update_fields=['average_rating'])
-                self.stdout.write(self.style.SUCCESS(f'Updated average rating for {movie.title}: {details["vote_average"]}'))
-                return 1, 0  # 1 updated, 0 errors
-        except Exception as e:
-            self.stdout.write(self.style.ERROR(f'Error updating {movie.title}: {str(e)}'))
-        return 0, 1  # 0 updated, 1 error
-"""
+

@@ -1,7 +1,7 @@
 import os
 import sys
 
-DJANGO_SETTINGS_MODULE = "FlixFinder.settings"
+DJANGO_SETTINGS_MODULE = "core.settings"
 
 
 

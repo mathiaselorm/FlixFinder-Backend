@@ -4,13 +4,13 @@ from django.db.models import Q
 from movies.models import Movie
 from datetime import date
 
-"""
+
 class Command(BaseCommand):
     help = 'Deletes movies with a release date of 2000 or earlier'
 
     def handle(self, *args, **options):
         # Set the cutoff date as January 1, 2001 (so it includes the year 2000)
-        cutoff_date = date(2001, 1, 1)
+        cutoff_date = date(2000, 1, 1)
 
         with transaction.atomic():
             # Query to find movies where the release date is on or before the cutoff date
@@ -21,6 +21,8 @@ class Command(BaseCommand):
             old_movies.delete()
 
             self.stdout.write(self.style.SUCCESS(f'Successfully deleted {count} movies released on or before the year 2000.'))
+
+
 """
 
 class Command(BaseCommand):
@@ -49,3 +51,4 @@ class Command(BaseCommand):
 
             # Output the result
             self.stdout.write(self.style.SUCCESS(f'Successfully deleted {count} movies with essential fields missing'))
+"""

@@ -1,3 +1,63 @@
+import json
+from django.core.management.base import BaseCommand
+from django.db import transaction
+from django.contrib.auth import get_user_model
+from faker import Faker
+import random
+
+
+User = get_user_model()
+fake = Faker()
+
+class Command(BaseCommand):
+    help = 'Populate specified fields in the CustomUser model using Faker'
+
+    def handle(self, *args, **options):
+        users = User.objects.all()  # Fetch all users or adjust to fetch specific ones
+        updated_count = 0
+
+        with transaction.atomic():
+            for user in users:
+                updated = False
+
+                if not user.date_of_birth:
+                    user.date_of_birth = fake.date_of_birth(minimum_age=18, maximum_age=70)
+                    updated = True
+
+                if not user.gender:
+                    user.gender = random.choice(['male', 'female', 'non-binary'])
+                    updated = True
+
+                if not user.location:
+                    user.location = fake.address()
+                    updated = True
+
+                if not user.bio:
+                    user.bio = fake.text(max_nb_chars=200)
+                    updated = True
+
+                if not user.preferences:
+                    # Example preference setup, adjust as necessary
+                    user.preferences = json.dumps({
+                        'genres': random.sample([
+                            'Action', 'Comedy', 'Drama', 'Fantasy',
+                            'Horror', 'Romance', 'Sci-Fi', 'Thriller'
+                        ], k=random.randint(2, 5))
+                    })
+                    updated = True
+
+                if updated:
+                    user.save()
+                    updated_count += 1
+                    self.stdout.write(self.style.SUCCESS(f'Updated user: {user.email}'))
+
+        self.stdout.write(self.style.SUCCESS(f'Total users updated: {updated_count}'))
+
+
+
+
+
+"""
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.contrib.auth import get_user_model
@@ -55,3 +115,4 @@ class Command(BaseCommand):
                 fake.unique.clear()  # Reset the Faker unique instance to avoid infinite loops
 
         self.stdout.write(self.style.SUCCESS(f'Successfully created {created_count} fake users.'))
+"""

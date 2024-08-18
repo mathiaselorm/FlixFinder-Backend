@@ -1,0 +1,49 @@
+from django.core.management.base import BaseCommand
+from django.db import transaction
+from django.contrib.auth import get_user_model
+from faker import Faker
+import random
+
+User = get_user_model()
+fake = Faker()
+
+
+
+class Command(BaseCommand):
+    help = 'Populate phone number and gender fields in the CustomUser model using Faker'
+
+    def handle(self, *args, **options):
+        users = User.objects.all()  # Fetch all users or adjust to fetch specific ones
+        updated_count = 0
+
+        with transaction.atomic():
+            for user in users:
+                updated = False
+
+                if not user.phone_number:
+                    # Ensure that the generated phone number is unique
+                    user.phone_number = self.generate_unique_phone_number()
+                    updated = True
+
+                if not user.gender:
+                    # Assign a random gender if not set
+                    user.gender = random.choice(['male', 'female', 'other'])
+                    updated = True
+
+                if updated:
+                    user.save()
+                    updated_count += 1
+                    self.stdout.write(self.style.SUCCESS(f'Updated user: {user.email}'))
+
+        self.stdout.write(self.style.SUCCESS(f'Total users updated: {updated_count}'))
+
+    def generate_unique_phone_number(self):
+        """
+        Attempt to generate a unique phone number. Adjust the generation logic if specific format is needed.
+        """
+        max_attempts = 10
+        for _ in range(max_attempts):
+            phone_number = fake.phone_number()
+            if not User.objects.filter(phone_number=phone_number).exists():
+                return phone_number
+        raise Exception('Failed to generate a unique phone number after several attempts')

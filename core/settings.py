@@ -154,8 +154,9 @@ LOGGING = {
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+
 DATABASES = {
-    'default': env.db(),  # Use env.db() to parse the DATABASE_URL environment variable
+    'default': env.db(), 
 }
 
 
