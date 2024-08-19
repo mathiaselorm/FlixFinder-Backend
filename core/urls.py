@@ -22,9 +22,9 @@ from django.urls import path, include
 
 schema_view = get_schema_view(
    openapi.Info(
-      title="AsempaBrand API",
+      title="FlixFinder API",
       default_version='v1',
-      description="API documentation for AsempaBrand Website",
+      description="API documentation for FlixFinder App",
    ),
    public=True,
    permission_classes=(permissions.AllowAny,),
@@ -36,8 +36,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('accounts.urls')),
     path('api/', include('movies.urls')),
-    #path('api/', include('ratings.urls')),	
-    #path('api/', include('recommendation.urls')),   
+    path('api/', include('ratings.urls')),	
+    path('api/', include('recommendation.urls')),   
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     

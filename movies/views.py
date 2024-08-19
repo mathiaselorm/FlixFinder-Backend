@@ -28,11 +28,40 @@ class GenreListView(APIView):
     permission_classes = [permissions.AllowAny]
 
     @swagger_auto_schema(
+        operation_description="Retrieve a comprehensive list of all genres available in the database.",
         responses={
-            200: GenreMinimalSerializer(many=True),
-            500: 'Internal Server Error'
+            200: openapi.Response(
+                description="A list of all genres successfully retrieved.",
+                schema=GenreMinimalSerializer(many=True),
+                examples={
+                    'application/json': {
+                        "genres": [
+                            {"id": 1, "name": "Rock"},
+                            {"id": 2, "name": "Jazz"},
+                            {"id": 3, "name": "Classical"}
+                        ]
+                    }
+                }
+            ),
+            500: openapi.Response(
+                description="Internal Server Error",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(type=openapi.TYPE_STRING, description="Error message"),
+                        'error': openapi.Schema(type=openapi.TYPE_STRING, description="Detailed error information")
+                    },
+                    example={
+                        "message": "Internal server error",
+                        "error": "Database connection failed"
+                    }
+                )
+            )
         },
-        operation_description="Retrieve a list of all genres."
+        tags=['Genres'],
+        operation_id="list_genres",
+        operation_summary="Get a List of Genres",
+        security=[]
     )
     def get(self, request, format=None):
         try:
@@ -52,15 +81,40 @@ class GenreCreateView(APIView):
     201: Created - Returns the created genre data.
     400: Bad Request - When the data provided is invalid.
     """
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAdminUser]  
+
 
     @swagger_auto_schema(
+        operation_description="Create a new genre in the database.",
         request_body=GenreMinimalSerializer,
         responses={
-            201: GenreMinimalSerializer(),
-            400: 'Bad Request'
+            201: openapi.Response(
+                description="Genre successfully created.",
+                schema=GenreMinimalSerializer,
+                examples={
+                    'application/json': {
+                        "id": 4,
+                        "name": "Blues"
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="Bad Request - Invalid data provided.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'name': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_STRING), description="Error details for the name field.")
+                    },
+                    example={
+                        "name": ["This field is required."]
+                    }
+                )
+            )
         },
-        operation_description="Create a new genre."
+        tags=['Genres'],
+        operation_id="create_genre",
+        operation_summary="Create a New Genre",
+        security=[{'bearerAuth': []}]  
     )
     def post(self, request, format=None):
         serializer = GenreMinimalSerializer(data=request.data)
@@ -82,11 +136,45 @@ class GenreDetailView(APIView):
     permission_classes = [permissions.AllowAny]
 
     @swagger_auto_schema(
+        operation_description="Retrieve detailed information about a specific genre using its ID or slug.",
+        manual_parameters=[
+            openapi.Parameter(
+                name='identifier',
+                in_=openapi.IN_PATH,
+                description="The unique identifier (ID or slug) of the genre to retrieve.",
+                type=openapi.TYPE_STRING,
+                required=True
+            )
+        ],
         responses={
-            200: GenreSerializer(),
-            404: 'Not Found'
+            200: openapi.Response(
+                description="Detailed information about the genre.",
+                schema=GenreSerializer,
+                examples={
+                    'application/json': {
+                        "id": 1,
+                        "name": "Rock",
+                        "description": "A genre of popular music that originated as 'rock and roll' in the United States in the early 1950s."
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="Genre not found.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING, description="Error message")
+                    },
+                    example={
+                        "error": "Genre not found"
+                    }
+                )
+            )
         },
-        operation_description="Retrieve details of a specific genre."
+        tags=['Genres'],
+        operation_id="get_genre_detail",
+        operation_summary="Get Detailed Genre Information",
+        security=[]
     )
     def get(self, request, identifier, format=None):
         genre = get_object_by_id_or_slug(Genre, identifier, slug_field='slug')
@@ -101,19 +189,56 @@ class GenreUpdateDeleteView(APIView):
     """
     Updates or deletes a genre based on the provided identifier.
 
-    PUT: Updates the specified genre with provided data.
+    Accessible only to authenticated users, this endpoint allows for updating or deleting genres identified by their
+    unique ID or slug. Suitable for administrative tasks or user-generated content management.
+
+    PUT: Updates the specified genre with the provided data.
     DELETE: Deletes the specified genre.
     """
-    permission_classes = [permissions.IsAuthenticated]  # Update to restrict to authenticated users
+    permission_classes = [permissions.IsAuthenticated] 
 
     @swagger_auto_schema(
+        operation_description="Update an existing genre using its ID or slug.",
         request_body=GenreSerializer,
         responses={
-            200: GenreSerializer(),
-            400: 'Bad Request',
-            404: 'Not Found'
+            200: openapi.Response(
+                description="Genre successfully updated.",
+                schema=GenreSerializer,
+                examples={
+                    'application/json': {
+                        "id": 1,
+                        "name": "Rock",
+                        "description": "A broad genre of popular music based on rock and roll."
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="Bad Request - Invalid data provided.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'name': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_STRING), description="Error details for the name field.")
+                    },
+                    example={
+                        "name": ["This field must not be blank."]
+                    }
+                )
+            ),
+            404: 'Genre not found'
         },
-        operation_description="Update an existing genre."
+        manual_parameters=[
+            openapi.Parameter(
+                name='identifier',
+                in_=openapi.IN_PATH,
+                description="The unique identifier (ID or slug) of the genre to update.",
+                type=openapi.TYPE_STRING,
+                required=True
+            )
+        ],
+        tags=['Genres'],
+        operation_id="update_genre",
+        operation_summary="Update Genre Details",
+        security=[{'bearerAuth': []}]  # Assuming JWT Bearer token is used for auth
     )
     def put(self, request, identifier, format=None):
         genre = get_object_by_id_or_slug(Genre, identifier, slug_field='slug')
@@ -127,11 +252,35 @@ class GenreUpdateDeleteView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
+        operation_description="Delete a specific genre using its ID or slug.",
         responses={
             204: 'No Content',
-            404: 'Not Found'
+            404: openapi.Response(
+                description="Genre not found",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING, description="Error message")
+                    },
+                    example={
+                        "error": "Genre not found"
+                    }
+                )
+            )
         },
-        operation_description="Delete a specific genre."
+        manual_parameters=[
+            openapi.Parameter(
+                name='identifier',
+                in_=openapi.IN_PATH,
+                description="The unique identifier (ID or slug) of the genre to delete.",
+                type=openapi.TYPE_STRING,
+                required=True
+            )
+        ],
+        tags=['Genres'],
+        operation_id="delete_genre",
+        operation_summary="Delete Genre",
+        security=[{'bearerAuth': []}]  # Assuming JWT Bearer token is used for auth
     )
     def delete(self, request, identifier, format=None):
         genre = get_object_by_id_or_slug(Genre, identifier, slug_field='slug')
@@ -145,7 +294,10 @@ class GenreUpdateDeleteView(APIView):
 
 class GenreMoviesListView(generics.ListAPIView):
     """
-    Retrieves a list of movies associated with a specific genre, identified by the genre's slug.
+    Retrieves a list of movies associated with a specific genre, using the genre's slug as an identifier.
+
+    This endpoint is publicly accessible and allows users to explore movies associated with a specific genre.
+    Filtering, searching, and ordering capabilities are provided to enhance user experience and relevance of the results.
     """
     serializer_class = MovieMinimalSerializer
     permission_classes = [permissions.AllowAny]
@@ -161,14 +313,36 @@ class GenreMoviesListView(generics.ListAPIView):
             openapi.Parameter(
                 'genre_slug',
                 openapi.IN_PATH,
-                description="Slug of the genre to filter movies by",
+                description="The slug of the genre to filter movies by, facilitating targeted retrieval of movies associated with a specific genre.",
                 type=openapi.TYPE_STRING,
                 required=True
             )
         ],
         responses={
-            200: MovieMinimalSerializer(many=True, help_text="Returns a list of movies associated with the specified genre."),
-            404: "Genre not found"
+            200: openapi.Response(
+                description="A list of movies associated with the specified genre.",
+                schema=MovieMinimalSerializer(many=True),
+                examples={
+                    'application/json': {
+                        "movies": [
+                            {"id": 1, "title": "Inception", "release_date": "2010-07-16"},
+                            {"id": 2, "title": "Interstellar", "release_date": "2014-11-07"}
+                        ]
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="Genre not found",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING, description="Error message")
+                    },
+                    example={
+                        "error": "Genre not found"
+                    }
+                )
+            )
         },
         tags=['Movies by Genre']
     )
@@ -193,6 +367,12 @@ class GenreMoviesListView(generics.ListAPIView):
     
 
 class MovieDetailView(APIView):
+    """
+    Retrieves detailed information about a movie identified by its slug or identifier within a specific genre.
+    
+    This endpoint is publicly accessible and ensures detailed movie information is only provided if the movie is
+    associated with the specified genre. If not, a 404 error is returned.
+    """
     permission_classes = [permissions.AllowAny]
 
     @swagger_auto_schema(
@@ -201,21 +381,49 @@ class MovieDetailView(APIView):
             openapi.Parameter(
                 'genre_slug',
                 openapi.IN_PATH,
-                description="Slug of the genre to which the movie belongs",
+                description="Slug of the genre to which the movie belongs.",
                 type=openapi.TYPE_STRING,
                 required=True
             ),
             openapi.Parameter(
                 'identifier',
                 openapi.IN_PATH,
-                description="Identifier or slug of the movie",
+                description="Identifier or slug of the movie. This can be the movie's ID or its URL-friendly slug.",
                 type=openapi.TYPE_STRING,
                 required=True
             )
         ],
         responses={
-            200: MovieSerializer(help_text="Returns detailed information about the movie."),
-            404: "Movie not found in the specified genre"
+            200: openapi.Response(
+                description="Detailed information about the movie.",
+                schema=MovieSerializer,
+                examples={
+                    'application/json': {
+                        "id": 10,
+                        "title": "The Great Escape",
+                        "release_date": "1963-07-04",
+                        "genres": [
+                            {"id": 1, "name": "War"},
+                            {"id": 2, "name": "Adventure"}
+                        ],
+                        "director": "John Sturges",
+                        "cast": "Steve McQueen, James Garner, Richard Attenborough",
+                        "description": "Allied prisoners of war plan for several hundred of their number to escape from a German camp during World War II."
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="Movie not found in the specified genre",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING, description="Error message")
+                    },
+                    example={
+                        "error": "Movie not found in the specified genre"
+                    }
+                )
+            )
         },
         tags=['Movie Details']
     )
@@ -229,29 +437,72 @@ class MovieDetailView(APIView):
             genre = get_object_by_id_or_slug(Genre, genre_slug, slug_field='slug')
             movie = get_object_by_id_or_slug(Movie, identifier, slug_field='slug')
         except NotFound as e:
-            return Response({'error': str(e)}, status=HTTP_404_NOT_FOUND)
+            return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)
 
         if not movie.genres.filter(slug=genre_slug).exists():
-            return Response({"error": "Movie not found in the specified genre"}, status=HTTP_404_NOT_FOUND)
+            return Response({"error": "Movie not found in the specified genre"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = MovieSerializer(movie, context={'request': request})
         return Response(serializer.data)
 
 
 class MovieUpdateView(APIView):
-    permission_classes = [permissions.AllowAny]
+    """
+    Updates the details of a movie identified by its slug or identifier within a specific genre.
+    
+    This endpoint allows authenticated users to update movie details, ensuring that the movie belongs to the specified genre.
+    If the movie does not exist under the specified genre or if data validation fails, appropriate error responses are returned.
+    """
+    permission_classes = [permissions.IsAdminUser]
 
     @swagger_auto_schema(
-        operation_description="Update details of a specific movie within a genre.",
+        operation_description="Update details of a specific movie within a genre based on provided data.",
         request_body=MovieSerializer,
         responses={
-            200: MovieSerializer(help_text="Returns the updated movie information."),
-            400: 'Validation errors',
-            404: "Movie not found in the specified genre"
+            200: openapi.Response(
+                description="Successfully updated movie details.",
+                schema=MovieSerializer,
+                examples={
+                    'application/json': {
+                        "id": 25,
+                        "title": "The Revenant",
+                        "release_date": "2015-12-16",
+                        "genres": [{"id": 3, "name": "Adventure"}, {"id": 4, "name": "Drama"}],
+                        "director": "Alejandro González Iñárritu",
+                        "cast": "Leonardo DiCaprio, Tom Hardy",
+                        "description": "A frontiersman on a fur trading expedition in the 1820s fights for survival after being mauled by a bear and left for dead by members of his own hunting team."
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="Validation errors occurred.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'field_name': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_STRING), description="List of errors for each field")
+                    },
+                    example={
+                        "title": ["This field may not be blank."],
+                        "release_date": ["Invalid date format."]
+                    }
+                )
+            ),
+            404: openapi.Response(
+                description="Movie not found in the specified genre.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING, description="Error message")
+                    },
+                    example={
+                        "error": "Movie not found in the specified genre"
+                    }
+                )
+            )
         },
         manual_parameters=[
-            openapi.Parameter('genre_slug', openapi.IN_PATH, description="Slug of the genre", type=openapi.TYPE_STRING, required=True),
-            openapi.Parameter('identifier', openapi.IN_PATH, description="Identifier or slug of the movie", type=openapi.TYPE_STRING, required=True)
+            openapi.Parameter('genre_slug', openapi.IN_PATH, description="Slug of the genre to which the movie belongs", type=openapi.TYPE_STRING, required=True),
+            openapi.Parameter('identifier', openapi.IN_PATH, description="Identifier or slug of the movie to be updated", type=openapi.TYPE_STRING, required=True)
         ],
         tags=['Movie Update']
     )
@@ -259,7 +510,7 @@ class MovieUpdateView(APIView):
         """
         Updates a movie specified by its identifier or slug within a given genre based on the provided data.
         Validates the existence of the movie within the specified genre before attempting an update.
-        If the movie is not found under the specified genre or validation fails, appropriate error messages and status codes are returned.
+        If the movie is not found under the specified genre or if data validation fails, appropriate error messages and status codes are returned.
         """
         try:
             genre = get_object_by_id_or_slug(Genre, slug=genre_slug)
@@ -279,23 +530,58 @@ class MovieUpdateView(APIView):
 
 class MovieDeleteView(APIView):
     """
-    Delete a movie from a specific genre by its slug.
+    Deletes a movie from a specific genre based on the movie's slug.
 
-    This view allows users to delete a movie identified by its slug within a specified genre.
+    This endpoint allows authenticated users to delete a movie identified by its slug within a specific genre.
+    It verifies the movie's association with the genre before proceeding with deletion.
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAdminUser]  
 
     @swagger_auto_schema(
-        operation_description="Delete a specific movie from a genre.",
+        operation_description="Delete a specific movie from a genre based on the movie's slug.",
+        manual_parameters=[
+            openapi.Parameter(
+                'genre_slug',
+                openapi.IN_PATH,
+                description="Slug of the genre from which the movie is to be deleted.",
+                type=openapi.TYPE_STRING,
+                required=True
+            ),
+            openapi.Parameter(
+                'identifier',
+                openapi.IN_PATH,
+                description="Identifier or slug of the movie to be deleted.",
+                type=openapi.TYPE_STRING,
+                required=True
+            )
+        ],
         responses={
-            204: openapi.Response(description="No Content. Movie deleted successfully."),
-            404: openapi.Response(description="Not Found. Movie not found in the specified genre."),
-        }
+            204: openapi.Response(
+                description="No Content. Movie deleted successfully."
+            ),
+            404: openapi.Response(
+                description="Not Found. Movie not found in the specified genre.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING, description="Error message")
+                    },
+                    example={
+                        "error": "Movie not found in the specified genre"
+                    }
+                )
+            )
+        },
+        tags=['Movie Deletion']
     )
     def delete(self, request, genre_slug, identifier):
+        """
+        Deletes a movie specified by its identifier or slug within a given genre.
+        Verifies the movie's presence in the specified genre before deletion.
+        """
         try:
             # Retrieve the genre
-            genre = get_object_by_id_or_slug(Genre, genre_slug, slug_field='slug')
+            genre = get_object_by_id_or_slug(Genre, slug=genre_slug)
             # Retrieve the movie within the genre
             movie = get_object_by_id_or_slug(Movie, identifier, slug_field='slug')
         except NotFound as e:
@@ -314,31 +600,76 @@ class MovieDeleteView(APIView):
 class MovieCommentsView(generics.ListCreateAPIView):
     """
     View to list all comments for a specific movie within a genre and create new comments.
+    This endpoint supports both GET and POST methods for authenticated users or read-only access.
     """
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     @swagger_auto_schema(
         operation_description="Retrieve a list of all comments for a specific movie within a specified genre.",
+        manual_parameters=[
+            openapi.Parameter(
+                name='genre_slug',
+                in_=openapi.IN_PATH,
+                description="Slug of the genre to which the movie belongs",
+                type=openapi.TYPE_STRING,
+                required=True
+            ),
+            openapi.Parameter(
+                name='identifier',
+                in_=openapi.IN_PATH,
+                description="Slug of the movie for which comments are listed",
+                type=openapi.TYPE_STRING,
+                required=True
+            )
+        ],
         responses={
-            200: CommentSerializer(many=True),
-            404: 'Movie or Genre not found'
+            200: openapi.Response(
+                description="A list of all comments for the movie.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY, 
+                    items=openapi.Items(type=openapi.TYPE_OBJECT, properties={
+                        'id': openapi.Schema(type=openapi.TYPE_INTEGER, description="The ID of the comment"),
+                        'user': openapi.Schema(type=openapi.TYPE_STRING, description="Username of the commenter"),
+                        'comment': openapi.Schema(type=openapi.TYPE_STRING, description="Comment text"),
+                        'date_posted': openapi.Schema(type=openapi.TYPE_STRING, description="Date when the comment was posted", format='date')
+                    }),
+                ),
+                examples={
+                    'application/json': [
+                        {"id": 1, "user": "john_doe", "comment": "Great movie!", "date_posted": "2024-01-02"},
+                        {"id": 2, "user": "jane_doe", "comment": "Really enjoyed the plot.", "date_posted": "2024-01-03"}
+                    ]
+                }
+            ),
+            404: "Movie or Genre not found"
         }
     )
     def get_queryset(self):
         """
         Return a list of all comments for the movie specified by the genre_slug and identifier.
         """
-        # Ensure the movie is part of the specified genre
         genre = get_object_or_404(Genre, slug=self.kwargs['genre_slug'])
         movie = get_object_or_404(Movie, slug=self.kwargs['identifier'], genres=genre)
         return Comment.objects.filter(movie=movie)
 
     @swagger_auto_schema(
         operation_description="Create a new comment for a specific movie within a specified genre.",
+        request_body=CommentSerializer,
         responses={
-            201: CommentSerializer(),
-            400: 'Bad Request - Invalid data'
+            201: openapi.Response(
+                description="Successfully created a new comment.",
+                schema=CommentSerializer,
+                examples={
+                    'application/json': {
+                        "id": 3,
+                        "user": "new_user",
+                        "comment": "Incredible cinematography!",
+                        "date_posted": "2024-01-04"
+                    }
+                }
+            ),
+            400: "Bad Request - Invalid data"
         }
     )
     def perform_create(self, serializer):
@@ -354,7 +685,7 @@ class MovieCommentsView(generics.ListCreateAPIView):
 class CommentUpdateView(generics.RetrieveUpdateAPIView):
     """
     View to retrieve and update a user's comment.
-    Only the owner of the comment is allowed to update it.
+    This endpoint ensures that only the owner of the comment can see and modify their comment.
     """
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
@@ -362,15 +693,14 @@ class CommentUpdateView(generics.RetrieveUpdateAPIView):
 
     def get_queryset(self):
         """
-        This view should return comments only for the currently authenticated user.
+        Returns comments only for the currently authenticated user, ensuring user privacy and data integrity.
         """
         user = self.request.user
         return Comment.objects.filter(user=user)
 
     def get_object(self):
         """
-        Override the standard `get_object` method to ensure users can only access their own comments.
-        Raises PermissionDenied if the comment does not belong to the user.
+        Ensures that a user can only access their own comments. Raises PermissionDenied if the comment does not belong to the user.
         """
         comment = super().get_object()
         if comment.user != self.request.user:
@@ -378,41 +708,70 @@ class CommentUpdateView(generics.RetrieveUpdateAPIView):
         return comment
 
     @swagger_auto_schema(
-        operation_description="Retrieve and update a user's comment.",
+        operation_description="Retrieve and update a user's comment by its ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                'id',
+                in_=openapi.IN_PATH,
+                description="The ID of the comment to retrieve and update.",
+                type=openapi.TYPE_INTEGER,
+                required=True
+            )
+        ],
         responses={
-            200: CommentSerializer(),
-            403: "Permission denied - You do not have permission to edit this comment.",
+            200: openapi.Response(
+                description="Successfully retrieved and updated the comment.",
+                schema=CommentSerializer,
+                examples={
+                    'application/json': {
+                        "id": 1,
+                        "user": "john_doe",
+                        "comment": "This is an updated comment.",
+                        "date_posted": "2024-01-02"
+                    }
+                }
+            ),
+            403: openapi.Response(
+                description="Permission denied - You do not have permission to edit this comment.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING, description="Error message")
+                    },
+                    example={
+                        "error": "You do not have permission to edit this comment."
+                    }
+                )
+            ),
             404: "Comment not found",
             400: "Bad Request - Invalid data"
         }
     )
     def put(self, request, *args, **kwargs):
         """
-        Handle the PUT request to update a comment.
-        Returns the updated comment if the request is successful.
+        Handles the PUT request to update a comment. Validates the data and returns the updated comment if successful.
         """
         return super().put(request, *args, **kwargs)
     
     
 class CommentDeleteView(generics.DestroyAPIView):
     """
-    View to delete a user's comment.
-    Only the owner of the comment is allowed to delete it.
+    Allows a user to delete their own comment. Ensures that comments can only be deleted by their respective owners.
     """
     queryset = Comment.objects.all()
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         """
-        This view should return comments only for the currently authenticated user.
+        Returns comments only for the currently authenticated user, ensuring data privacy and ownership enforcement.
         """
         user = self.request.user
         return Comment.objects.filter(user=user)
 
     def get_object(self):
         """
-        Ensure users can only delete their own comments.
-        Raises PermissionDenied if the comment does not belong to the user.
+        Overrides the standard `get_object` method to include a security check, ensuring that the comment belongs to the currently authenticated user before allowing deletion.
+        Raises PermissionDenied if the user tries to delete a comment that does not belong to them.
         """
         comment = super().get_object()
         if comment.user != self.request.user:
@@ -420,28 +779,98 @@ class CommentDeleteView(generics.DestroyAPIView):
         return comment
 
     @swagger_auto_schema(
-        operation_description="Delete a user's comment.",
+        operation_description="Delete a user's comment by its ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                'id',
+                in_=openapi.IN_PATH,
+                description="The ID of the comment to be deleted.",
+                type=openapi.TYPE_INTEGER,
+                required=True
+            )
+        ],
         responses={
-            204: "Comment successfully deleted.",
-            403: "Permission denied - You do not have permission to delete this comment.",
-            404: "Comment not found"
+            204: openapi.Response(
+                description="Comment successfully deleted."
+            ),
+            403: openapi.Response(
+                description="Permission denied - You do not have permission to delete this comment.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING, description="Error message")
+                    },
+                    example={
+                        "error": "You do not have permission to delete this comment."
+                    }
+                )
+            ),
+            404: openapi.Response(
+                description="Comment not found",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING, description="Error message")
+                    },
+                    example={
+                        "error": "Comment not found"
+                    }
+                )
+            )
         }
     )
     def delete(self, request, *args, **kwargs):
         """
-        Handle the DELETE request to delete a comment.
-        Returns a 204 status if the deletion is successful.
+        Handles the DELETE request to delete a comment. If the deletion is successful, a 204 No Content response is returned. 
+        Ensures that only the comment's owner can delete the comment.
         """
         return super().delete(request, *args, **kwargs)
     
     
 class TopRatedMoviesView(APIView):
     """
-    View to list all top-rated movies based on a dynamic average rating threshold.
-    Allows querying for top-rated movies above a specific average rating.
+    Retrieves a list of all top-rated movies based on a dynamic average rating threshold.
+    This endpoint allows users to query for movies that have an average rating above a specified value.
+    The default threshold is 8.0, but it can be overridden by a query parameter.
     """
     permission_classes = [permissions.AllowAny]
 
+    @swagger_auto_schema(
+        operation_description="Retrieve top-rated movies above a specified average rating threshold.",
+        manual_parameters=[
+            openapi.Parameter(
+                name='threshold',
+                in_=openapi.IN_QUERY,
+                description="The minimum average rating threshold for top-rated movies. Default is 8.0.",
+                type=openapi.TYPE_NUMBER,
+                required=False
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="A list of top-rated movies.",
+                schema=MovieMinimalSerializer(many=True),
+                examples={
+                    'application/json': [
+                        {"id": 1, "title": "The Shawshank Redemption", "average_rating": 9.3},
+                        {"id": 2, "title": "The Godfather", "average_rating": 9.2}
+                    ]
+                }
+            ),
+            400: openapi.Response(
+                description="Invalid threshold value.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING, description="Error message")
+                    },
+                    example={
+                        "error": "Invalid threshold value."
+                    }
+                )
+            )
+        }
+    )
     def get(self, request, format=None):
         # Default threshold for top-rated movies is 8.0, can be overridden by query parameter
         threshold = request.query_params.get('threshold', 8.0)
@@ -454,7 +883,6 @@ class TopRatedMoviesView(APIView):
         # Pass the request context to the serializer
         serializer = MovieMinimalSerializer(top_rated_movies, many=True, context={'request': request})
         return Response(serializer.data)
-
     
 
 class WatchlistCreateView(APIView):

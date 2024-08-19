@@ -5,6 +5,7 @@ from rest_framework import status, views, permissions, generics
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import ListAPIView
 from rest_framework.decorators import api_view
 from drf_yasg.utils import swagger_auto_schema
@@ -138,30 +139,36 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 class UserDetailView(generics.RetrieveUpdateAPIView):
     """
-    Retrieve or update a user instance.
+    Retrieve or update the authenticated user's instance.
     """
-    queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        """
+        Override to return the current user's instance.
+        """
+        # Return the currently authenticated user
+        return self.request.user
 
     @swagger_auto_schema(operation_summary="Retrieve User Details")
     def get(self, request, *args, **kwargs):
         """
-        Retrieve the details of a user.
+        Retrieve the details of the authenticated user.
         """
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update User Details")
     def put(self, request, *args, **kwargs):
         """
-        Update the details of a user.
+        Update the details of the authenticated user.
         """
         return self.update(request, *args, **kwargs)
-    
+
     @swagger_auto_schema(operation_summary="Partially Update User Details")
     def patch(self, request, *args, **kwargs):
         """
-        Partially update the details of a user.
+        Partially update the details of the authenticated user.
         """
         kwargs['partial'] = True
         return self.put(request, *args, **kwargs)
