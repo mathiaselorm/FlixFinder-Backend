@@ -2,3 +2,4 @@ ECHO is on.
 .env
 .venv/
 django_errors.log
+data/
