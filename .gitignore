@@ -2,4 +2,5 @@ ECHO is on.
 .env
 .venv/
 django_errors.log
-data/data/ratings.csv
+data/ratings.csvdata
+data
