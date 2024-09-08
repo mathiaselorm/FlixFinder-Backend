@@ -4,9 +4,10 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from movies.models import Movie
+from ratings.models import Rating
 from .models import RecommendedMovie
 from .serializers import RecommendedMovieSerializer
-from .utils import predict_rating, get_top_n_recommendations
+from .utils import predict_rating, get_top_n_recommendations, recommend_based_on_genres
 
 User = get_user_model()
 
@@ -51,11 +52,20 @@ def predict_rating_view(request):
 @api_view(['POST'])
 @csrf_exempt
 def recommend_movies_view(request):
-    user_id = request.data.get('user_id')  
+    user_id = request.user.id
     if user_id:
         try:
             user_id = int(user_id)
-            recommendations = get_top_n_recommendations(user_id, n=10)
+            # Count how many movies the user has rated
+            rating_count = Rating.objects.filter(user_id=user_id).count()
+            
+            if rating_count > 5:  # Threshold for cold start (adjust as needed)
+                # Use collaborative filtering
+                recommendations = get_top_n_recommendations(user_id, n=10)
+            else:
+                # Use content-based filtering
+                recommendations = recommend_based_on_genres(user_id, n=10)
+            
             data = {
                 'recommendations': [{
                     'movie_id': movie.id,

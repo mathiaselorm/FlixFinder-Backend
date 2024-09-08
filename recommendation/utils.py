@@ -2,12 +2,18 @@ import os
 import pandas as pd
 from django.conf import settings
 import pickle
+from django.db.models import Count, Q
 from movies.models import Movie
+from django.db import models
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from ratings.models import Rating
 from surprise import SVD, Dataset, Reader
 from surprise.model_selection import train_test_split
+from django.contrib.auth import get_user_model
+import json
+User = get_user_model()
+
 
 
 def get_ratings_dataset():
@@ -46,7 +52,7 @@ def train_model():
     
     
      # Save the trained model to a file
-    file_path = r'C:\Users\Melarc.py\Documents\GitHub\FlixFinder\recommendation\models\trained_model.pkl'
+    file_path = r'C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\recommendation\models\trained_model.pkl'
     with open(file_path, 'wb') as file:
         pickle.dump(algo, file)
         
@@ -65,7 +71,7 @@ def load_model():
     Loads the trained SVD model from a file.
     """
     # Define the path to the model file
-    file_path = r'C:\Users\Melarc.py\Documents\GitHub\FlixFinder\recommendation\models\trained_model.pkl'
+    file_path = r'C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\recommendation\models\trained_model.pkl'
     #file_path = 'recommendation/models/trained_model.pkl' For production
     
     # Load the model from the file
@@ -109,3 +115,39 @@ def get_top_n_recommendations(user_id, n=10):
     # Return the top n predictions
     top_n = predictions[:n]
     return [(Movie.objects.get(id=movie_id), rating) for movie_id, rating in top_n]
+
+
+
+def recommend_based_on_genres(user_id, n=10):
+    """
+    Recommends movies based on the user's preferred genres.
+    - If the user has one or more preferred genres, recommend movies matching any of those genres.
+    - If the user has no preferred genres, recommend top-rated movies.
+    """
+    user = User.objects.get(id=user_id)
+    
+    # Ensure that preferences are treated as a dictionary if stored as a string
+    if isinstance(user.preferences, str):
+        user.preferences = json.loads(user.preferences)
+
+    preferred_genres = user.preferences.get('genres', [])
+    
+    if not preferred_genres:
+        # If the user has no genre preferences, return top rated movies
+        top_movies = Movie.objects.order_by('-average_rating')[:n]
+        return [(movie, movie.average_rating) for movie in top_movies]
+
+     # Adjust the query to handle one or more genres appropriately
+    if len(preferred_genres) == 1:
+        # If only one genre is preferred, filter directly without annotation
+        genre_matched_movies = Movie.objects.filter(genres__name=preferred_genres[0])
+    else:
+        # For multiple genres, use the previous approach
+        genre_matched_movies = Movie.objects.filter(
+            genres__name__in=preferred_genres
+        ).annotate(
+            matched_genres=Count('genres', filter=Q(genres__name__in=preferred_genres))
+        ).filter(matched_genres__gte=2).distinct()
+
+    top_movies = genre_matched_movies.order_by('-average_rating')[:n]
+    return [(movie, movie.average_rating) for movie in top_movies]

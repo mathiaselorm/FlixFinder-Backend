@@ -11796,3 +11796,168 @@ Traceback (most recent call last):
   File "C:\Users\Melarc.py\Documents\GitHub\FlixFinder\.venv\Lib\site-packages\rest_framework\generics.py", line 92, in get_object
     assert lookup_url_kwarg in self.kwargs, (
 AssertionError: Expected view UserDetailView to be called with a URL keyword argument named "pk". Fix your URL conf, or set the `.lookup_field` attribute on the view correctly.
+ERROR 2024-09-03 16:24:41,721 log Internal Server Error: /api/genres/1/
+Traceback (most recent call last):
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\views\generic\base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\generics.py", line 212, in get
+    return self.retrieve(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\mixins.py", line 54, in retrieve
+    instance = self.get_object()
+               ^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\generics.py", line 92, in get_object
+    assert lookup_url_kwarg in self.kwargs, (
+AssertionError: Expected view GenreDetailView to be called with a URL keyword argument named "slug". Fix your URL conf, or set the `.lookup_field` attribute on the view correctly.
+ERROR 2024-09-03 19:33:57,866 log Internal Server Error: /api/movies/top-rated/
+Traceback (most recent call last):
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\views\generic\base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\movies\views.py", line 878, in get
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\serializers.py", line 795, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\serializers.py", line 714, in to_representation
+    self.child.to_representation(item) for item in iterable
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\serializers.py", line 538, in to_representation
+    ret[field.field_name] = field.to_representation(attribute)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\fields.py", line 1870, in to_representation
+    return method(value)
+           ^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\movies\serializers.py", line 23, in get_url
+    url = reverse('movie-detail', kwargs={'genre_slug': genre_slug, 'identifier': obj.slug})
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\urls\base.py", line 88, in reverse
+    return resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\urls\resolvers.py", line 851, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'movie-detail' with keyword arguments '{'genre_slug': 'drama', 'identifier': ''}' not found. 1 pattern(s) tried: ['api/genres/(?P<genre_slug>[^/]+)/movies/(?P<identifier>[^/]+)/\\Z']
+ERROR 2024-09-03 19:39:41,049 log Internal Server Error: /api/movies/top-rated/
+Traceback (most recent call last):
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\views\generic\base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\movies\views.py", line 878, in get
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\serializers.py", line 795, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\serializers.py", line 714, in to_representation
+    self.child.to_representation(item) for item in iterable
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\serializers.py", line 538, in to_representation
+    ret[field.field_name] = field.to_representation(attribute)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\fields.py", line 1870, in to_representation
+    return method(value)
+           ^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\movies\serializers.py", line 23, in get_url
+    url = reverse('movie-detail', kwargs={'genre_slug': genre_slug, 'identifier': obj.slug})
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\urls\base.py", line 88, in reverse
+    return resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\urls\resolvers.py", line 851, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'movie-detail' with keyword arguments '{'genre_slug': 'drama', 'identifier': ''}' not found. 1 pattern(s) tried: ['api/genres/(?P<genre_slug>[^/]+)/movies/(?P<identifier>[^/]+)/\\Z']
+ERROR 2024-09-03 19:43:08,035 log Internal Server Error: /api/movies/top-rated/
+Traceback (most recent call last):
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\django\views\generic\base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\venv\Lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Melarc.py\Documents\GitHub\Backend\FlixFinder\movies\views.py", line 871, in get
+    page = self.paginate_queryset(top_rated_movies)
+           ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TopRatedMoviesView' object has no attribute 'paginate_queryset'
+ERROR 2024-09-06 23:19:02,754 redis Connection to Redis lost: Retry (0/20) now.
+ERROR 2024-09-06 23:19:06,825 redis Connection to Redis lost: Retry (1/20) in 1.00 second.

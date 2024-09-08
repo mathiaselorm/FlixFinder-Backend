@@ -20,7 +20,7 @@ class Command(BaseCommand):
         all_genres = Genre.objects.all()
         genre_dict = {genre.name: genre for genre in all_genres}
 
-        start_page = 45
+        start_page = 1
         max_pages = 100
 
         for page in range(start_page, max_pages + 1):

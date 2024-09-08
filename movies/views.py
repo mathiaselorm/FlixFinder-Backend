@@ -1,13 +1,16 @@
 
+from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.status import HTTP_204_NO_CONTENT, HTTP_404_NOT_FOUND
-from rest_framework.exceptions import PermissionDenied, NotFound
+from rest_framework.exceptions import PermissionDenied, NotFound, ValidationError
 from .models import Movie, Genre, Comment, Watchlist
 from .serializers import MovieSerializer, GenreSerializer, CommentSerializer, MovieMinimalSerializer, GenreMinimalSerializer, WatchlistSerializer
+from rest_framework.pagination import PageNumberPagination
+from django.core.cache import cache
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.shortcuts import get_object_or_404
@@ -179,7 +182,7 @@ class GenreDetailView(APIView):
     def get(self, request, identifier, format=None):
         genre = get_object_by_id_or_slug(Genre, identifier, slug_field='slug')
         if genre:
-            serializer = GenreSerializer(genre, context={'request': request})
+            serializer = GenreSerializer(genre, context={'request': request, 'view': self})
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Genre not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -293,12 +296,6 @@ class GenreUpdateDeleteView(APIView):
 
 
 class GenreMoviesListView(generics.ListAPIView):
-    """
-    Retrieves a list of movies associated with a specific genre, using the genre's slug as an identifier.
-
-    This endpoint is publicly accessible and allows users to explore movies associated with a specific genre.
-    Filtering, searching, and ordering capabilities are provided to enhance user experience and relevance of the results.
-    """
     serializer_class = MovieMinimalSerializer
     permission_classes = [permissions.AllowAny]
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
@@ -349,21 +346,19 @@ class GenreMoviesListView(generics.ListAPIView):
     def get_queryset(self):
         """
         Fetches movies that belong to a specific genre identified by 'genre_slug'.
-        If the genre does not exist, it raises a 404 error.
+        Caches the genre object and its movies if not already cached.
         """
-        genre = get_object_by_id_or_slug(Genre, self.kwargs['genre_slug'], slug_field='slug')
-        if not genre:
-            raise NotFound(detail="Genre not found")
-        return genre.movies.all()
+        cache_key = f"genre_movies_{self.kwargs['genre_slug']}"
+        cached_genre_movies = cache.get(cache_key)
 
-    def list(self, request, *args, **kwargs):
-        """
-        Overrides the list method to apply custom filtering and return a response.
-        Utilizes the serializer to format the movie data correctly before sending the response.
-        """
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        if cached_genre_movies:
+            return cached_genre_movies
+
+        genre = get_object_or_404(Genre, slug=self.kwargs['genre_slug'])
+        movies = genre.movies.all().prefetch_related('genres')
+        cache.set(cache_key, movies, timeout=3600)  # Cache for 1 hour
+        return movies
+
     
 
 class MovieDetailView(APIView):
@@ -682,7 +677,7 @@ class MovieCommentsView(generics.ListCreateAPIView):
         
         
 
-class CommentUpdateView(generics.RetrieveUpdateAPIView):
+class CommentRetrieveUpdateView(generics.RetrieveUpdateAPIView):
     """
     View to retrieve and update a user's comment.
     This endpoint ensures that only the owner of the comment can see and modify their comment.
@@ -827,61 +822,83 @@ class CommentDeleteView(generics.DestroyAPIView):
         return super().delete(request, *args, **kwargs)
     
     
+
 class TopRatedMoviesView(APIView):
-    """
-    Retrieves a list of all top-rated movies based on a dynamic average rating threshold.
-    This endpoint allows users to query for movies that have an average rating above a specified value.
-    The default threshold is 8.0, but it can be overridden by a query parameter.
-    """
     permission_classes = [permissions.AllowAny]
 
     @swagger_auto_schema(
-        operation_description="Retrieve top-rated movies above a specified average rating threshold.",
+        operation_summary="Retrieve Top-Rated Movies",
+        operation_description="Fetches a list of movies that have an average rating above a specified threshold. "
+                              "This endpoint is useful for finding highly rated movies within the database.",
         manual_parameters=[
             openapi.Parameter(
                 name='threshold',
                 in_=openapi.IN_QUERY,
-                description="The minimum average rating threshold for top-rated movies. Default is 8.0.",
+                description="The minimum average rating to filter movies by. Defaults to 8.0 if not specified.",
                 type=openapi.TYPE_NUMBER,
                 required=False
             )
         ],
         responses={
             200: openapi.Response(
-                description="A list of top-rated movies.",
-                schema=MovieMinimalSerializer(many=True),
-                examples={
-                    'application/json': [
-                        {"id": 1, "title": "The Shawshank Redemption", "average_rating": 9.3},
-                        {"id": 2, "title": "The Godfather", "average_rating": 9.2}
-                    ]
-                }
-            ),
-            400: openapi.Response(
-                description="Invalid threshold value.",
+                description="A list of top-rated movies above the specified threshold.",
                 schema=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
-                        'error': openapi.Schema(type=openapi.TYPE_STRING, description="Error message")
-                    },
-                    example={
-                        "error": "Invalid threshold value."
+                        'count': openapi.Schema(type=openapi.TYPE_INTEGER, description="Total number of movies returned."),
+                        'next': openapi.Schema(type=openapi.TYPE_STRING, description="URL to the next page of results.", format=openapi.FORMAT_URI),
+                        'previous': openapi.Schema(type=openapi.TYPE_STRING, description="URL to the previous page of results.", format=openapi.FORMAT_URI),
+                        'results': openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Items(type=openapi.TYPE_OBJECT, properties={
+                                'id': openapi.Schema(type=openapi.TYPE_INTEGER, description="Movie ID"),
+                                'title': openapi.Schema(type=openapi.TYPE_STRING, description="Title of the movie"),
+                                'average_rating': openapi.Schema(type=openapi.TYPE_NUMBER, description="Average rating of the movie"),
+                            }),
+                            description="Array of top-rated movies."
+                        )
+                    }
+                )
+            ),
+            400: openapi.Response(
+                description="Bad request when the threshold value is invalid.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'error': openapi.Schema(type=openapi.TYPE_STRING, description="Error message explaining the invalid input.")
                     }
                 )
             )
         }
     )
-    def get(self, request, format=None):
-        # Default threshold for top-rated movies is 8.0, can be overridden by query parameter
+    def get(self, request, *args, **kwargs):
+        # Get the threshold parameter from the request
         threshold = request.query_params.get('threshold', 8.0)
         try:
+            # Try to convert the threshold to a float
             threshold = float(threshold)
         except ValueError:
-            return Response({"error": "Invalid threshold value."}, status=status.HTTP_400_BAD_REQUEST)
+            # If the conversion fails, return an error response
+            return Response({"error": "Invalid threshold value."}, status=400)
 
-        top_rated_movies = Movie.objects.filter(average_rating__gte=threshold)
-        # Pass the request context to the serializer
-        serializer = MovieMinimalSerializer(top_rated_movies, many=True, context={'request': request})
+        # Query the movies that have an average rating greater or equal to the threshold
+        queryset = Movie.objects.filter(average_rating__gte=threshold)
+
+        # Initialize the paginator
+        paginator = PageNumberPagination()
+        paginator.page_size = 10  # You can configure the page size here
+
+        # Paginate the queryset
+        page = paginator.paginate_queryset(queryset, request)
+        if page is not None:
+            # If pagination is successful, serialize the page of movies
+            serializer = MovieMinimalSerializer(page, many=True, context={'request': request})
+            # Return the paginated response
+            return paginator.get_paginated_response(serializer.data)
+
+        # If no pagination is required (unlikely unless page size is larger than the queryset),
+        # serialize and return the entire queryset
+        serializer = MovieMinimalSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
     
 

@@ -8,7 +8,10 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
+
 """
+
+
 
 from pathlib import Path
 
@@ -53,6 +56,20 @@ FIREBASE_CREDENTIALS = {
     "universe_domain": env('FIREBASE_UNIVERSE_DOMAIN')
 }
 
+broker_connection_retry_on_startup = True
+
+CELERY_BROKER_URL = 'redis://localhost:6380/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6380/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+CELERY_TASK_ALWAYS_EAGER = False  # Set to True if you want tasks to execute locally
+CELERY_WORKER_LOG_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
+CELERY_WORKER_TASK_LOG_FORMAT = "%(asctime)s [%(levelname)s] %(task_name)s[%(task_id)s]: %(message)s"
+CELERY_WORKER_REDIRECT_STDOUTS = True
+CELERY_WORKER_REDIRECT_STDOUTS_LEVEL = 'DEBUG'
+
 
 # Application definition
 
@@ -75,6 +92,8 @@ INSTALLED_APPS = [
     'recommendation'
     
 ]
+
+INSTALLED_APPS += ['django_celery_beat']
 
 
 MIDDLEWARE = [
@@ -145,6 +164,13 @@ LOGGING = {
         '': {  # This configures the root logger
             'handlers': ['file'],
             'level': 'ERROR',
+            'propagate': True,
+        },
+    },
+    'loggers': {
+        'celery': {
+            'handlers': ['file'],
+            'level': 'INFO',
             'propagate': True,
         },
     },

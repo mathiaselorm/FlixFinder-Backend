@@ -26,10 +26,12 @@ urlpatterns = [
     
     #urls for comments
     path('genres/<str:genre_slug>/movies/<str:identifier>/comments/', views.MovieCommentsView.as_view(), name='movie-comments'),
-
+    path('genres/<str:genre_slug>/movies/<str:identifier>/comments/details/', views.CommentRetrieveUpdateView.as_view(), name='comment-detail'),
+    path('genres/<str:genre_slug>/movies/<str:identifier>/comments/updates/', views.CommentRetrieveUpdateView.as_view(), name='comment-update'),
     
-    path('users/watchlist/create/', views.WatchlistCreateView.as_view(), name='watchlist-create'),
+    #watchlist urls
     path('users/watchlist/', views.WatchlistListView.as_view(), name='watchlist-list'),
+    path('users/watchlist/create/', views.WatchlistCreateView.as_view(), name='watchlist-create'),
     path('users/watchlist/update/<int:pk>/', views.WatchlistUpdateView.as_view(), name='watchlist-update'),	
     path('users/watchlist/delete/<int:pk>/', views.WatchlistDeleteView.as_view(), name='watchlist-delete'),
 

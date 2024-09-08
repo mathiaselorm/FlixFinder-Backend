@@ -12,8 +12,8 @@ class RatingSerializer(serializers.ModelSerializer):
 
     def validate_score(self, value):
         """
-        Check that the score is within the 1 to 5 range.
+        Check that the score is within the 1 to 10 range.
         """
-        if not (1 <= value <= 5):
-            raise serializers.ValidationError("The score must be between 1 and 5.")
+        if not (1 <= value <= 10):
+            raise serializers.ValidationError("The score must be between 1 and 10.")
         return value
